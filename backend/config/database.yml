@@ -9,3 +9,5 @@ default: &default
 development:
   <<: *default
   database: celebritycrush_development
+
+  
