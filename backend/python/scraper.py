@@ -5,7 +5,10 @@ from urllib.parse import quote
 import psycopg2
 from datetime import datetime
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options
+from proxies.proxy_manager import get_working_proxy
+from proxies.captcha_solver import solve_audio_captcha
+import Options
 from selenium.webdriver.common.by import By
 import time
 import random
@@ -90,13 +93,15 @@ def setup_selenium():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-    proxy = get_random_proxy()
+    proxy = get_working_proxy()
     if proxy:
         chrome_options.add_argument(f'--proxy-server={proxy}')
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
 # Custom Google search for missing info or images
+from proxies.captcha_solver import solve_audio_captcha
+
 def google_search(query, search_type="text"):
     driver = setup_selenium()
     results = {}
@@ -106,6 +111,11 @@ def google_search(query, search_type="text"):
             url = f"https://www.google.com/search?q={quote(query)}"
             driver.get(url)
             time.sleep(random.uniform(2, 5))
+
+            # Check for CAPTCHA
+            if "recaptcha" in driver.page_source.lower():
+                solve_audio_captcha(driver)
+                time.sleep(2)
 
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             organic_results = []
@@ -125,6 +135,10 @@ def google_search(query, search_type="text"):
             url = f"https://www.google.com/search?tbm=isch&q={quote(query)}"
             driver.get(url)
             time.sleep(random.uniform(2, 5))
+
+            if "recaptcha" in driver.page_source.lower():
+                solve_audio_captcha(driver)
+                time.sleep(2)
 
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             image_results = []

@@ -50,6 +50,23 @@ const Button = styled.button<{ theme: Theme }>`
   font-family: 'Inter', sans-serif;
 `;
 
+const OAuthButton = styled(Button)`
+  background: ${({ provider }: { provider: string; theme: Theme }) => {
+    switch (provider) {
+      case 'twitter':
+        return '#1DA1F2';
+      case 'google':
+        return '#DB4437';
+      case 'twitch':
+        return '#6441A5';
+      case 'bluesky':
+        return '#0085FF';
+      default:
+        return '#888';
+    }
+  }};
+`;
+
 const AutocompleteList = styled.ul<{ theme: Theme }>`
   list-style: none;
   padding: 0;
@@ -100,8 +117,8 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
     const userData = {
       user: {
         username,
-        email: `${username}@example.com`,  // Replace with actual email input
-        password: "password123",  // Replace with actual password input
+        email: `${username}@example.com`,
+        password: "password123",
         page_type: pageType,
         celebrity_name: celebrityName,
         social_media_links: socialMediaLinks
@@ -120,8 +137,8 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
       });
   };
 
-  const handleSocialMediaLogin = (platform: string) => {
-    window.location.href = `https://api.${platform}.com/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:3001/auth/${platform}/callback`;
+  const handleOAuthLogin = (provider: string) => {
+    window.location.href = `http://localhost:3000/users/auth/${provider}`;
   };
 
   return (
@@ -161,25 +178,19 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
                 ))}
               </AutocompleteList>
             )}
-            <Button type="button" theme={theme} onClick={() => handleSocialMediaLogin("twitter")}>
-              Verify with Twitter
-            </Button>
-            <Button type="button" theme={theme} onClick={() => handleSocialMediaLogin("instagram")}>
-              Verify with Instagram
-            </Button>
           </>
         )}
         <Input
           theme={theme}
           type="text"
-          placeholder="Twitter Profile URL"
+          placeholder="Twitter Profile URL (optional)"
           value={socialMediaLinks.twitter}
           onChange={(e) => setSocialMediaLinks({ ...socialMediaLinks, twitter: e.target.value })}
         />
         <Input
           theme={theme}
           type="text"
-          placeholder="Instagram Profile URL"
+          placeholder="Instagram Profile URL (optional)"
           value={socialMediaLinks.instagram}
           onChange={(e) => setSocialMediaLinks({ ...socialMediaLinks, instagram: e.target.value })}
         />
@@ -192,6 +203,19 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
           I confirm that I am at least 13 years old (18 for NSFW content).
         </CheckboxLabel>
         <Button type="submit" theme={theme}>Sign Up</Button>
+        <h3>Or Sign Up With:</h3>
+        <OAuthButton provider="twitter" theme={theme} onClick={() => handleOAuthLogin("twitter")}>
+          Twitter (X)
+        </OAuthButton>
+        <OAuthButton provider="google" theme={theme} onClick={() => handleOAuthLogin("google_oauth2")}>
+          Google
+        </OAuthButton>
+        <OAuthButton provider="twitch" theme={theme} onClick={() => handleOAuthLogin("twitch")}>
+          Twitch
+        </OAuthButton>
+        <OAuthButton provider="bluesky" theme={theme} onClick={() => handleOAuthLogin("bluesky")}>
+          Bluesky
+        </OAuthButton>
       </Form>
     </SignupWrapper>
   );

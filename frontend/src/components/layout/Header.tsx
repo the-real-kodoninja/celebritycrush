@@ -3,6 +3,7 @@ import { Theme, darkTheme } from '../../themes';
 import Button from '../common/Button';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const HeaderWrapper = styled.header<{ theme: Theme }>`
   display: flex;
@@ -48,7 +49,7 @@ const Search = styled.input<{ theme: Theme }>`
   }
 `;
 
-const Dropdown = styled.div<{ theme: Theme }>`
+const Dropdown = styled(motion.div)<{ theme: Theme }>`
   position: absolute;
   top: 100%;
   left: 0;
@@ -60,11 +61,6 @@ const Dropdown = styled.div<{ theme: Theme }>`
   overflow-y: auto;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  animation: fadeIn 0.2s ease-in-out;
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
 `;
 
 const DropdownItem = styled(Link)<{ theme: Theme }>`
@@ -122,7 +118,7 @@ const NotificationIcon = styled.div`
   cursor: pointer;
 `;
 
-const NotificationCount = styled.span`
+const NotificationCount = styled(motion.span)`
   position: absolute;
   top: -5px;
   right: -5px;
@@ -133,7 +129,7 @@ const NotificationCount = styled.span`
   font-size: 0.8rem;
 `;
 
-const NotificationDropdown = styled.div<{ theme: Theme }>`
+const NotificationDropdown = styled(motion.div)<{ theme: Theme }>`
   position: absolute;
   top: 100%;
   right: 0;
@@ -146,7 +142,7 @@ const NotificationDropdown = styled.div<{ theme: Theme }>`
   z-index: 1000;
 `;
 
-const NotificationItem = styled.div<{ theme: Theme; read: boolean }>`
+const NotificationItem = styled(motion.div)<{ theme: Theme; read: boolean }>`
   padding: 0.5rem;
   border-bottom: 1px solid ${({ theme }) => theme.border};
   background: ${({ read, theme }) => (read ? theme.cardBg : theme.primary + '20')};
@@ -174,7 +170,7 @@ const Header: React.FC<HeaderProps> = ({ theme, toggleTheme, isLoggedIn, onLogin
   useEffect(() => {
     if (isLoggedIn) {
       fetch('http://localhost:3000/api/notifications', {
-        headers: { 'Authorization': 'Bearer your_jwt_token_here' }  // Replace with actual JWT token
+        headers: { 'Authorization': 'Bearer your_jwt_token_here' }
       })
         .then(res => res.json())
         .then(data => setNotifications(data));
@@ -198,25 +194,40 @@ const Header: React.FC<HeaderProps> = ({ theme, toggleTheme, isLoggedIn, onLogin
     celeb.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery) {
+      window.location.href = `/search?q=${searchQuery}`;
+    }
+  };
+
   return (
     <HeaderWrapper theme={theme}>
       <Hamburger theme={theme} onClick={onToggleSidebar}>☰</Hamburger>
       <Logo theme={theme}>CelebrityCrush</Logo>
       <SearchWrapper>
-        <Search
-          theme={theme}
-          placeholder="Search celebrities..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setIsDropdownOpen(true);
-          }}
-          onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-          onFocus={() => setIsDropdownOpen(true)}
-        />
+        <form onSubmit={handleSearchSubmit}>
+          <Search
+            theme={theme}
+            placeholder="Search celebrities..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setIsDropdownOpen(true);
+            }}
+            onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+            onFocus={() => setIsDropdownOpen(true)}
+          />
+        </form>
         {isDropdownOpen && searchQuery && (
-          <Dropdown theme={theme}>
-            {filteredCelebs.map(celeb => (
+          <Dropdown
+            theme={theme}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {filteredCelebs.slice(0, 5).map(celeb => (
               <DropdownItem key={celeb.name} to={`/celebrity/${celeb.name}`} theme={theme}>
                 <DropdownImage src={celeb.photo_url} alt={celeb.name} />
                 <span>{celeb.name}</span>
@@ -230,16 +241,33 @@ const Header: React.FC<HeaderProps> = ({ theme, toggleTheme, isLoggedIn, onLogin
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z" fill={theme.text}/>
           </svg>
-          {unreadCount > 0 && <NotificationCount>{unreadCount}</NotificationCount>}
+          {unreadCount > 0 && (
+            <NotificationCount
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              {unreadCount}
+            </NotificationCount>
+          )}
         </NotificationIcon>
         {showNotifications && (
-          <NotificationDropdown theme={theme}>
+          <NotificationDropdown
+            theme={theme}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
             {notifications.map((notification: any) => (
               <NotificationItem
                 key={notification.id}
                 theme={theme}
                 read={notification.read}
                 onClick={() => markAsRead(notification.id)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
               >
                 {notification.message}
               </NotificationItem>
