@@ -1,42 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
+import { darkTheme, lightTheme, Theme } from './themes';
+import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
+import LeftSidebar from './components/layout/LeftSidebar';
+import RightSidebar from './components/layout/RightSidebar';
+import FaceCard from './components/celebrity/FaceCard';
 
-const Container = styled.div`
-  background: #1a0d2e;
-  color: #fff;
-  min-height: 100vh;
-  font-family: Arial, sans-serif;
-`;
-
-const Header = styled.header`
-  display: flex;
-  align-items: center;
-  padding: 10px 20px;
-  background: #2b1a4e;
-`;
-
-const Logo = styled.h1`
-  font-size: 24px;
-  margin: 0;
-`;
-
-const Search = styled.input`
-  margin-left: 20px;
-  padding: 8px;
-  border-radius: 4px;
-  background: #fff;
-  color: #000;
-`;
-
-const Card = styled.div`
-  border: 1px solid #ff69b4;
-  padding: 16px;
-  margin: 8px;
-  background: #2b1a4e;
-`;
-
-const CelebImage = styled.img`
-  max-width: 200px;
+const MainContent = styled.div<{ theme: Theme }>`
+  margin-left: 200px;
+  margin-right: 200px;
+  padding: 20px;
+  background: ${({ theme }) => theme.background};
+  min-height: calc(100vh - 60px);
 `;
 
 interface Celebrity {
@@ -45,10 +21,8 @@ interface Celebrity {
     sources: {
       wiki?: { bio: string; photo_url: string; url: string };
       tmz?: { news: { title: string; url: string }[]; url: string };
-      imdb?: { url: string };
-      ethnic_celebs?: { race: string; url: string };
       social?: { twitter: { url: string }; instagram: { url: string } };
-      misc?: { nft: { url: string }; dating: { url: string }; nsfw: { url: string } };
+      misc?: { nft: { url: string }; dating: { url: string } };
     };
   };
 }
@@ -56,6 +30,10 @@ interface Celebrity {
 const App: React.FC = () => {
   const [celebs, setCelebs] = useState<Celebrity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'light' ? lightTheme : darkTheme;
+  });
 
   useEffect(() => {
     fetch('http://localhost:3000/api/celebrities')
@@ -66,43 +44,31 @@ const App: React.FC = () => {
       });
   }, []);
 
-  if (loading) return <Container>Loading...</Container>;
+  const toggleTheme = () => {
+    const newTheme = theme === darkTheme ? lightTheme : darkTheme;
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme === lightTheme ? 'light' : 'dark');
+  };
+
+  if (loading) return <MainContent theme={theme}>Loading...</MainContent>;
 
   return (
-    <Container>
-      <Header>
-        <Logo>CelebrityCrush</Logo>
-        <Search placeholder="Search celebrities..." />
-      </Header>
-      {celebs.map(celeb => (
-        <Card key={celeb.name}>
-          <h2>{celeb.name}</h2>
-          {celeb.data.sources.wiki && (
-            <>
-              <CelebImage src={celeb.data.sources.wiki.photo_url} alt={celeb.name} />
-              <p>{celeb.data.sources.wiki.bio.substring(0, 100)}... <a href={celeb.data.sources.wiki.url}>Wiki</a></p>
-            </>
-          )}
-          {celeb.data.sources.tmz && (
-            <div>
-              <h3>News</h3>
-              {celeb.data.sources.tmz.news.map(n => (
-                <p key={n.url}><a href={n.url}>{n.title}</a></p>
-              ))}
-            </div>
-          )}
-          {celeb.data.sources.social && (
-            <p>
-              <a href={celeb.data.sources.social.twitter.url}>Twitter</a> | 
-              <a href={celeb.data.sources.social.instagram.url}>Instagram</a>
-            </p>
-          )}
-          {celeb.data.sources.misc && (
-            <p><a href={celeb.data.sources.misc.nft.url}>NFTs</a> | <a href={celeb.data.sources.misc.dating.url}>Dating</a></p>
-          )}
-        </Card>
-      ))}
-    </Container>
+    <>
+      <Header theme={theme} toggleTheme={toggleTheme} />
+      <LeftSidebar theme={theme} />
+      <MainContent theme={theme}>
+        {celebs.map(celeb => (
+          <FaceCard
+            key={celeb.name}
+            theme={theme}
+            name={celeb.name}
+            photo_url={celeb.data.sources.wiki?.photo_url || 'https://via.placeholder.com/100'}
+          />
+        ))}
+      </MainContent>
+      <RightSidebar theme={theme} />
+      <Footer theme={theme} />
+    </>
   );
 };
 
