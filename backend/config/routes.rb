@@ -1,21 +1,20 @@
 Rails.application.routes.draw do
   namespace :api do
-    resources :celebrities, only: [:index, :show], param: :name
-    resources :users, only: [:index, :show], param: :username do
-      resources :messages, only: [:index, :create]
-      resources :follows, only: [:index, :create, :destroy]
-      resources :lists, only: [:index, :create, :show, :destroy]
-    end
-    resources :groups, only: [:index, :create, :show] do
-      resources :members, only: [:create, :destroy], controller: 'group_members'
-    end
-    resources :fandom_posts, only: [:index, :create] do
+    resources :scraped_celebrities, only: [:index, :create]
+    resources :celebrities, only: [:index, :show]
+    resources :fandom_posts, only: [:index, :create, :show] do
       resources :likes, only: [:create, :destroy]
-      resources :comments, only: [:create] do
-        resources :replies, only: [:create]
+      resources :comments, only: [:create, :destroy] do
+        resources :replies, only: [:create, :destroy]
       end
       resources :shares, only: [:create, :destroy]
     end
-    resources :scraped_celebrities, only: [:index, :create]
+    resources :notifications, only: [:index] do
+      member do
+        post :mark_as_read
+      end
+    end
   end
+
+  devise_for :users, controllers: { registrations: "users/registrations" }
 end

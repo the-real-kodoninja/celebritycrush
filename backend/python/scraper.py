@@ -8,18 +8,27 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import time
-from serpapi import GoogleSearch
-import os
+import random
 
 # Database connection
 def get_db_connection():
     return psycopg2.connect(
         dbname="celebritycrush_development",
         user="kodoninja",
-        password="",
+        password="yourpassword",  # Replace with your actual password
         host="localhost",
         port="5432"
     )
+
+# Fetch users from the database
+def get_users_from_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, username, page_type, social_media_links, follower_count FROM users")
+    users = [{"id": row[0], "username": row[1], "page_type": row[2], "social_media_links": row[3], "follower_count": row[4]} for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return users
 
 # Fetch celebrity names from the database
 def get_celebrities_from_db():
@@ -31,7 +40,7 @@ def get_celebrities_from_db():
     conn.close()
     return celebrities
 
-# Update scraped_at timestamp after scraping
+# Update scraped_at timestamp for celebrities
 def update_scraped_at(name):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -43,25 +52,77 @@ def update_scraped_at(name):
     cur.close()
     conn.close()
 
+# Update user badge and send notification
+def update_user_badge(user_id, badge_type):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE users SET badge = %s WHERE id = %s",
+        (badge_type, user_id)
+    )
+    # Send notification
+    message = f"Congratulations! Your page now has a {badge_type.replace('_', ' ')} badge."
+    cur.execute(
+        "INSERT INTO notifications (user_id, message, read, created_at, updated_at) VALUES (%s, %s, %s, %s, %s)",
+        (user_id, message, False, datetime.now(), datetime.now())
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
 # Selenium setup for dynamic scraping
 def setup_selenium():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
-# Google search for missing info or images
-def google_search(query, api_key=None):
-    if not api_key:
-        api_key = os.getenv("SERPAPI_KEY", "950e5c5723afa42ff4f79441120e944aad1807c4de08d1112e8bf7ff63f7f9ad")  # Set your SerpApi key in environment variables
-    params = {
-        "q": query,
-        "api_key": api_key
-    }
-    search = GoogleSearch(params)
-    results = search.get_dict()
+# Custom Google search for missing info or images
+def google_search(query, search_type="text"):
+    driver = setup_selenium()
+    results = {}
+
+    try:
+        if search_type == "text":
+            url = f"https://www.google.com/search?q={quote(query)}"
+            driver.get(url)
+            time.sleep(random.uniform(2, 5))
+
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            organic_results = []
+            for result in soup.select('div.g'):
+                title = result.select_one('h3')
+                link = result.select_one('a')
+                snippet = result.select_one('div.VwiC3b')
+                if title and link:
+                    organic_results.append({
+                        "title": title.text,
+                        "link": link['href'],
+                        "snippet": snippet.text if snippet else ""
+                    })
+            results["organic_results"] = organic_results[:3]
+
+        elif search_type == "image":
+            url = f"https://www.google.com/search?tbm=isch&q={quote(query)}"
+            driver.get(url)
+            time.sleep(random.uniform(2, 5))
+
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            image_results = []
+            for img in soup.select('img'):
+                src = img.get('src')
+                if src and src.startswith('http'):
+                    image_results.append({"thumbnail": src})
+            results["images_results"] = image_results[:3]
+
+    except Exception as e:
+        print(f"Google search error for {query}: {e}")
+    finally:
+        driver.quit()
+
     return results
 
 SOURCES = {
@@ -89,9 +150,8 @@ def scrape_social_media_influencers():
         print(f"Scraping {platform} for influencers...")
         try:
             base_url = SOURCES[platform]
-            # Example: Search for popular users (this is a simplified approach; real-world scraping may need API access)
             driver.get(base_url + quote("influencer"))
-            time.sleep(3)  # Wait for page to load
+            time.sleep(3)
 
             if platform == "social_youtube":
                 elements = driver.find_elements(By.XPATH, "//ytd-channel-renderer")
@@ -117,11 +177,9 @@ def scrape_social_media_influencers():
                         elif "K" in followers and num >= 300:
                             influencers.add(name)
 
-            # Add similar logic for other platforms (simplified here due to complexity)
-            # In a real scenario, use APIs or more robust scraping methods
         except Exception as e:
             print(f"Error scraping {platform}: {e}")
-        time.sleep(1)  # Avoid rate limiting
+        time.sleep(1)
 
     driver.quit()
     return list(influencers)
@@ -138,6 +196,67 @@ def get_business_tycoons():
         "Mukesh Ambani",
         "Gautam Adani"
     ]
+
+# Check if a fan has become famous
+def check_fan_fame(user):
+    if user["page_type"] != "fan":
+        return None
+
+    username = user["username"]
+    user_id = user["id"]
+    social_media_links = user["social_media_links"] or {}
+    badge = None
+
+    # Check social media follower counts
+    driver = setup_selenium()
+    try:
+        for platform, link in social_media_links.items():
+            if not link:
+                continue
+            driver.get(link)
+            time.sleep(3)
+
+            if platform == "twitter":
+                follower_elem = driver.find_element(By.XPATH, "//span[contains(text(), 'followers')]")
+                followers = follower_elem.text.split()[0]
+                num = float(followers.replace("K", "").replace("M", ""))
+                if "M" in followers and num >= 0.3:
+                    badge = "internet_famous"
+                elif "K" in followers and num >= 300:
+                    badge = "internet_famous"
+
+            elif platform == "instagram":
+                follower_elem = driver.find_element(By.XPATH, "//span[@class='_ac2a']")
+                followers = follower_elem.text
+                num = float(followers.replace("K", "").replace("M", ""))
+                if "M" in followers and num >= 0.3:
+                    badge = "internet_famous"
+                elif "K" in followers and num >= 300:
+                    badge = "internet_famous"
+
+    except Exception as e:
+        print(f"Error checking social media for {username}: {e}")
+    finally:
+        driver.quit()
+
+    # Check for a Wikipedia page
+    wiki_url = f"{SOURCES['wiki']}{quote(username.replace(' ', '_'))}"
+    try:
+        resp = requests.get(wiki_url, headers={'User-Agent': 'Mozilla/5.0'})
+        if resp.status_code == 200:
+            badge = "famous"
+    except:
+        pass
+
+    # Check for magazine mentions
+    results = google_search(f"{username} magazine interview OR feature", search_type="text")
+    if "organic_results" in results and any("magazine" in result["title"].lower() for result in results["organic_results"]):
+        badge = "famous"
+
+    if badge:
+        update_user_badge(user_id, badge)
+        print(f"Assigned {badge} badge to {username}")
+    return badge
 
 def scrape_celebrity(name):
     data = {"name": name, "sources": {}}
@@ -160,7 +279,7 @@ def scrape_celebrity(name):
     # If no bio or image, search the web
     if not data["sources"]["wiki"]["bio"] or not data["sources"]["wiki"]["photo_url"]:
         print(f"Searching web for {name}...")
-        results = google_search(f"{name} biography OR profile site:*.edu OR site:*.org OR site:*.gov -inurl:(signup OR login)")
+        results = google_search(f"{name} biography OR profile site:*.edu OR site:*.org OR site:*.gov -inurl:(signup OR login)", search_type="text")
         if "organic_results" in results:
             for result in results["organic_results"]:
                 if not data["sources"]["wiki"]["bio"]:
@@ -177,7 +296,7 @@ def scrape_celebrity(name):
                         continue
 
         if not data["sources"]["wiki"]["photo_url"]:
-            img_results = google_search(f"{name} profile picture")
+            img_results = google_search(f"{name} profile picture", search_type="image")
             if "images_results" in img_results:
                 for img in img_results["images_results"]:
                     if "thumbnail" in img:
@@ -291,15 +410,19 @@ def main():
         print(f"Scraping batch {i // batch_size + 1} of {len(all_names) // batch_size + 1}...")
         batch_data = [scrape_celebrity(name) for name in batch]
         all_celebs.extend(batch_data)
-        # Save batch to temporary file
         with open(f'celebrities_batch_{i // batch_size + 1}.json', 'w') as f:
             json.dump(batch_data, f, indent=2)
-        time.sleep(5)  # Avoid rate limiting
+        time.sleep(5)
 
     # Combine all batches into final file
     with open('celebrities.json', 'w') as f:
         json.dump(all_celebs, f, indent=2)
     print(f"Scraped {len(all_celebs)} celebrities!")
+
+    # Check fans for fame
+    users = get_users_from_db()
+    for user in users:
+        check_fan_fame(user)
 
 if __name__ == "__main__":
     main()

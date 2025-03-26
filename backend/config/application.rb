@@ -30,3 +30,14 @@ module Backend
     config.api_only = true
   end
 end
+
+module Celebritycrush
+  class Application < Rails::Application
+    config.middleware.insert_before 0, Rack::Cors do
+      allow do
+        origins 'http://localhost:3001'
+        resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete, :options, :head]
+      end
+    end
+  end
+end

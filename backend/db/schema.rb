@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_26_171249) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_26_203338) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -110,6 +110,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_171249) do
     t.index ["sender_id"], name: "index_messages_on_sender_id"
   end
 
+  create_table "notifications", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "message"
+    t.boolean "read"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_notifications_on_user_id"
+  end
+
   create_table "replies", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "comment_id", null: false
@@ -144,6 +153,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_171249) do
     t.string "banner"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "badge"
+    t.string "page_type"
+    t.jsonb "social_media_links"
+    t.integer "follower_count"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true
   end
@@ -164,6 +177,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_171249) do
   add_foreign_key "lists", "users"
   add_foreign_key "messages", "users", column: "receiver_id"
   add_foreign_key "messages", "users", column: "sender_id"
+  add_foreign_key "notifications", "users"
   add_foreign_key "replies", "comments"
   add_foreign_key "replies", "users"
   add_foreign_key "shares", "fandom_posts"

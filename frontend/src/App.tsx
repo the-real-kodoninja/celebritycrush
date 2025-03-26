@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { darkTheme, lightTheme, Theme } from './themes';
+import Signup from './components/auth/Signup';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import LeftSidebar from './components/layout/LeftSidebar';
@@ -14,6 +15,7 @@ import Groups from './components/groups/Groups';
 import Fandom from './components/fandom/Fandom';
 import SearchPage from './components/search/SearchPage';
 import UserFeed from './components/user_feed/UserFeed';
+import Notifications from './components/notifications/Notifications';
 
 const GlobalStyles = styled.div`
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
@@ -178,6 +180,8 @@ const App: React.FC = () => {
                   </>
                 }
               />
+	      <Route path="/signup" element={<Signup theme={theme} />} />
+              <Route path="/notifications" element={<Notifications theme={theme} />} />
               <Route path="/lists" element={<Lists theme={theme} lists={mockLists} />} />
               <Route path="/groups" element={<Groups theme={theme} groups={mockGroups} />} />
               <Route path="/fandom" element={<Fandom theme={theme} posts={mockPosts} />} />
