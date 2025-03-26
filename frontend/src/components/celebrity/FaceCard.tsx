@@ -4,14 +4,19 @@ import Button from '../common/Button';
 
 const Card = styled.div<{ theme: Theme }>`
   border: 1px solid ${({ theme }) => theme.border};
-  padding: 16px;
-  margin: 8px;
+  padding: 1rem;
+  margin: 0.5rem;
   background: ${({ theme }) => theme.cardBg};
   border-radius: 8px;
   text-align: center;
   transition: transform 0.2s;
+  width: 200px;
   &:hover {
     transform: scale(1.05);
+  }
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 200px;
   }
 `;
 

@@ -2,11 +2,14 @@ import styled from '@emotion/styled';
 import { Theme } from '../../themes';
 
 const FooterWrapper = styled.footer<{ theme: Theme }>`
-  padding: 20px;
+  padding: 1rem;
   background: ${({ theme }) => theme.cardBg};
   text-align: center;
   color: ${({ theme }) => theme.text};
   border-top: 1px solid ${({ theme }) => theme.border};
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
 `;
 
 interface FooterProps {

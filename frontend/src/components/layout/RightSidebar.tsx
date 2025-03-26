@@ -4,16 +4,19 @@ import { Theme } from '../../themes';
 const Sidebar = styled.div<{ theme: Theme }>`
   width: 200px;
   background: ${({ theme }) => theme.cardBg};
-  padding: 20px;
+  padding: 2vw;
   height: 100vh;
   position: fixed;
   right: 0;
   border-left: 1px solid ${({ theme }) => theme.border};
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const Trend = styled.div<{ theme: Theme }>`
   color: ${({ theme }) => theme.text};
-  margin: 10px 0;
+  margin: 1rem 0;
 `;
 
 interface RightSidebarProps {
