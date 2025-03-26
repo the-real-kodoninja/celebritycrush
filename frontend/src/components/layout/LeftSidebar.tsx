@@ -11,9 +11,6 @@ const Sidebar = styled.div<{ theme: Theme; isOpen: boolean }>`
   transform: ${({ isOpen }) => (isOpen ? 'translateX(0)' : 'translateX(-100%)')};
   transition: transform 0.3s ease-in-out;
   z-index: 999;
-  @media (min-width: 1024px) {
-    transform: translateX(-100%);
-  }
 `;
 
 const NavItem = styled.a<{ theme: Theme }>`

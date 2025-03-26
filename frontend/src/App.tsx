@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { darkTheme, lightTheme, Theme } from './themes';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import LeftSidebar from './components/layout/LeftSidebar';
 import FaceCard from './components/celebrity/FaceCard';
+import CelebrityPage from './components/celebrity/CelebrityPage';
 import UserPage from './components/user/UserPage';
 import Messages from './components/user/Messages';
 import Feed from './components/feed/Feed';
 import Lists from './components/lists/Lists';
 import Groups from './components/groups/Groups';
 import Fandom from './components/fandom/Fandom';
+import SearchPage from './components/search/SearchPage';
 
 const MainContent = styled.div<{ theme: Theme; sidebarOpen: boolean }>`
   margin-left: 0;
@@ -98,6 +100,19 @@ const App: React.FC = () => {
     { name: 'Zendaya Stans', description: 'Zendaya appreciation group.' },
   ];
 
+  const celebrities = celebs.map(celeb => ({
+    name: celeb.name,
+    photo_url: celeb.data.sources.wiki?.photo_url || 'https://via.placeholder.com/100',
+    bio: celeb.data.sources.wiki?.bio || 'No bio available.',
+    posts: mockPosts.filter(post => post.celebrity === celeb.name),
+  }));
+
+  const SearchWrapper: React.FC = () => {
+    const location = useLocation();
+    const searchQuery = new URLSearchParams(location.search).get('q') || '';
+    return <SearchPage theme={theme} celebrities={celebrities} onFollow={handleFollow} onCrush={handleCrush} searchQuery={searchQuery} />;
+  };
+
   return (
     <Router>
       <Header
@@ -106,6 +121,7 @@ const App: React.FC = () => {
         isLoggedIn={isLoggedIn}
         onLoginClick={handleLoginClick}
         onToggleSidebar={toggleSidebar}
+        celebrities={celebrities}
       />
       <LeftSidebar theme={theme} isOpen={sidebarOpen} />
       <MainContent theme={theme} sidebarOpen={sidebarOpen}>
@@ -135,6 +151,16 @@ const App: React.FC = () => {
             <Route path="/fandom" element={<Fandom theme={theme} posts={mockPosts} />} />
             <Route path="/profile" element={<UserPage theme={theme} username="kodoninja" bio="Crushing it!" />} />
             <Route path="/messages" element={<Messages theme={theme} />} />
+            <Route path="/search" element={<SearchWrapper />} />
+            <Route
+              path="/celebrity/:name"
+              element={
+                <CelebrityPage
+                  theme={theme}
+                  celebrity={celebrities.find(c => c.name === window.location.pathname.split('/').pop()) || celebrities[0]}
+                />
+              }
+            />
             <Route path="/" element={<Navigate to="/feed" />} />
           </Routes>
         )}
