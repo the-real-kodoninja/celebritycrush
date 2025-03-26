@@ -9,7 +9,6 @@ import FaceCard from './components/celebrity/FaceCard';
 import CelebrityPage from './components/celebrity/CelebrityPage';
 import UserPage from './components/user/UserPage';
 import Messages from './components/user/Messages';
-import Feed from './components/feed/Feed';
 import Lists from './components/lists/Lists';
 import Groups from './components/groups/Groups';
 import Fandom from './components/fandom/Fandom';
@@ -62,15 +61,20 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [followedCelebs, setFollowedCelebs] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/celebrities')
+    fetch(`http://localhost:3000/api/celebrities?page=${page}`)
       .then(res => res.json())
       .then(data => {
-        setCelebs(data);
+        setCelebs(prev => [...prev, ...data]);
         setLoading(false);
       });
-  }, []);
+  }, [page]);
+
+  const loadMore = () => {
+    setPage(prev => prev + 1);
+  };
 
   const toggleTheme = () => {
     const newTheme = theme === darkTheme ? lightTheme : darkTheme;
@@ -148,7 +152,7 @@ const App: React.FC = () => {
         />
         <LeftSidebar theme={theme} isOpen={sidebarOpen} />
         <MainContent theme={theme} sidebarOpen={sidebarOpen}>
-          {loading ? (
+          {loading && page === 1 ? (
             <p>Loading...</p>
           ) : (
             <Routes>
@@ -158,16 +162,21 @@ const App: React.FC = () => {
               />
               <Route
                 path="/explore"
-                element={celebs.map(celeb => (
-                  <FaceCard
-                    key={celeb.name}
-                    theme={theme}
-                    name={celeb.name}
-                    photo_url={celeb.data.sources.wiki?.photo_url || 'https://via.placeholder.com/100'}
-                    onFollow={handleFollow}
-                    onCrush={handleCrush}
-                  />
-                ))}
+                element={
+                  <>
+                    {celebs.map(celeb => (
+                      <FaceCard
+                        key={celeb.name}
+                        theme={theme}
+                        name={celeb.name}
+                        photo_url={celeb.data.sources.wiki?.photo_url || 'https://via.placeholder.com/100'}
+                        onFollow={handleFollow}
+                        onCrush={handleCrush}
+                      />
+                    ))}
+                    <button onClick={loadMore}>Load More</button>
+                  </>
+                }
               />
               <Route path="/lists" element={<Lists theme={theme} lists={mockLists} />} />
               <Route path="/groups" element={<Groups theme={theme} groups={mockGroups} />} />

@@ -1,13 +1,15 @@
 class Api::CelebritiesController < ApplicationController
   def index
-    @celebs = Celebrity.all
-    all_data = JSON.parse(File.read(@celebs.first.json_path))
-    render json: @celebs.map { |c| { name: c.name, data: all_data.find { |d| d['name'] == c.name } } }
+    @celebrities = Celebrity.page(params[:page]).per(50) # Paginate 50 per page
+    render json: @celebrities
   end
 
   def show
-    @celeb = Celebrity.find_by(name: params[:id])
-    all_data = JSON.parse(File.read(@celeb.json_path))
-    render json: { name: @celeb.name, data: all_data.find { |d| d['name'] == @celeb.name } } if @celeb
+    @celebrity = Celebrity.find_by(name: params[:name])
+    if @celebrity
+      render json: @celebrity
+    else
+      render json: { error: "Celebrity not found" }, status: :not_found
+    end
   end
 end

@@ -16,20 +16,41 @@ const Post = styled.div<{ theme: Theme }>`
   margin-bottom: 1rem;
 `;
 
-interface FandomProps {
-  theme: Theme;
-  posts: { user: string; content: string; celebrity: string }[];
+const PostUser = styled.h3`
+  margin: 0;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+`;
+
+const PostContent = styled.p<{ theme: Theme }>`
+  margin: 0.5rem 0;
+  color: ${({ theme }) => theme.text};
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+`;
+
+interface FandomPost {
+  user: { username: string }; // Updated to match mockPosts structure
+  content: string;
+  celebrity: string;
 }
 
-const Fandom: React.FC<FandomProps> = ({ theme, posts }) => (
-  <FandomWrapper theme={theme}>
-    {posts.map((post, index) => (
-      <Post key={index} theme={theme}>
-        <h3>{post.user} on {post.celebrity}</h3>
-        <p>{post.content}</p>
-      </Post>
-    ))}
-  </FandomWrapper>
-);
+interface FandomProps {
+  theme: Theme;
+  posts: FandomPost[];
+}
+
+const Fandom: React.FC<FandomProps> = ({ theme, posts }) => {
+  return (
+    <FandomWrapper theme={theme}>
+      {posts.map((post, index) => (
+        <Post key={index} theme={theme}>
+          <PostUser>{post.user.username}</PostUser>
+          <PostContent theme={theme}>{post.content}</PostContent>
+        </Post>
+      ))}
+    </FandomWrapper>
+  );
+};
 
 export default Fandom;
