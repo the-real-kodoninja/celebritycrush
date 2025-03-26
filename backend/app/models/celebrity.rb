@@ -1,3 +1,3 @@
 class Celebrity < ApplicationRecord
-    validates :name, presence: true, uniqueness: true
-  end
+  validates :name, presence: true, uniqueness: true
+end
