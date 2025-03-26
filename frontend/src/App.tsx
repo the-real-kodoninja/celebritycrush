@@ -1,30 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { darkTheme, lightTheme, Theme } from './themes';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import LeftSidebar from './components/layout/LeftSidebar';
-import RightSidebar from './components/layout/RightSidebar';
 import FaceCard from './components/celebrity/FaceCard';
 import UserPage from './components/user/UserPage';
 import Messages from './components/user/Messages';
+import Feed from './components/feed/Feed';
+import Lists from './components/lists/Lists';
+import Groups from './components/groups/Groups';
+import Fandom from './components/fandom/Fandom';
 
-const MainContent = styled.div<{ theme: Theme }>`
-  margin-left: 200px;
-  margin-right: 200px;
-  padding: 2vw;
+const MainContent = styled.div<{ theme: Theme; sidebarOpen: boolean }>`
+  margin-left: 0;
+  padding: 1rem;
   background: ${({ theme }) => theme.background};
   min-height: calc(100vh - 60px);
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   justify-content: center;
-  @media (max-width: 768px) {
-    margin-left: 0;
-    margin-right: 0;
-    padding: 1rem;
-  }
 `;
 
 interface Celebrity {
@@ -47,6 +44,8 @@ const App: React.FC = () => {
     return saved === 'light' ? lightTheme : darkTheme;
   });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [followedCelebs, setFollowedCelebs] = useState<string[]>([]);
 
   useEffect(() => {
     fetch('http://localhost:3000/api/celebrities')
@@ -65,19 +64,59 @@ const App: React.FC = () => {
 
   const handleLoginClick = () => {
     if (!isLoggedIn) {
-      window.location.href = '/login'; // Placeholder for login page
+      window.location.href = '/login';
     }
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleFollow = (name: string) => {
+    setFollowedCelebs(prev => 
+      prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]
+    );
+  };
+
+  const handleCrush = (name: string) => {
+    // Placeholder for crush action
+  };
+
+  const mockPosts = followedCelebs.map(celeb => ({
+    user: 'kodoninja',
+    content: `Obsessed with ${celeb}!`,
+    celebrity: celeb,
+  }));
+
+  const mockLists = [
+    { name: 'Favorites', celebrities: ['Billie Eilish', 'Zendaya'] },
+    { name: 'Rising Stars', celebrities: ['Lynette Adkins'] },
+  ];
+
+  const mockGroups = [
+    { name: 'Billie Eilish Fans', description: 'For all Billie lovers!' },
+    { name: 'Zendaya Stans', description: 'Zendaya appreciation group.' },
+  ];
+
   return (
     <Router>
-      <Header theme={theme} toggleTheme={toggleTheme} isLoggedIn={isLoggedIn} onLoginClick={handleLoginClick} />
-      <LeftSidebar theme={theme} />
-      <MainContent theme={theme}>
+      <Header
+        theme={theme}
+        toggleTheme={toggleTheme}
+        isLoggedIn={isLoggedIn}
+        onLoginClick={handleLoginClick}
+        onToggleSidebar={toggleSidebar}
+      />
+      <LeftSidebar theme={theme} isOpen={sidebarOpen} />
+      <MainContent theme={theme} sidebarOpen={sidebarOpen}>
         {loading ? (
           <p>Loading...</p>
         ) : (
           <Routes>
+            <Route
+              path="/feed"
+              element={<Feed theme={theme} posts={mockPosts} />}
+            />
             <Route
               path="/explore"
               element={celebs.map(celeb => (
@@ -86,16 +125,20 @@ const App: React.FC = () => {
                   theme={theme}
                   name={celeb.name}
                   photo_url={celeb.data.sources.wiki?.photo_url || 'https://via.placeholder.com/100'}
+                  onFollow={handleFollow}
+                  onCrush={handleCrush}
                 />
               ))}
             />
+            <Route path="/lists" element={<Lists theme={theme} lists={mockLists} />} />
+            <Route path="/groups" element={<Groups theme={theme} groups={mockGroups} />} />
+            <Route path="/fandom" element={<Fandom theme={theme} posts={mockPosts} />} />
             <Route path="/profile" element={<UserPage theme={theme} username="kodoninja" bio="Crushing it!" />} />
             <Route path="/messages" element={<Messages theme={theme} />} />
-            <Route path="/" element={<div>Redirect to /explore</div>} />
+            <Route path="/" element={<Navigate to="/feed" />} />
           </Routes>
         )}
       </MainContent>
-      <RightSidebar theme={theme} />
       <Footer theme={theme} />
     </Router>
   );

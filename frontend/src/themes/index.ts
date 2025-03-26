@@ -4,20 +4,23 @@ export interface Theme {
   text: string;
   accent: string;
   border: string;
+  secondaryText: string;
 }
 
 export const darkTheme: Theme = {
-  background: '#121212',
-  cardBg: '#1e1e1e',
-  text: '#fff',
-  accent: '#bb86fc',
-  border: '#03dac6',
+  background: '#000000',
+  cardBg: '#1a1a1a',
+  text: '#ffffff',
+  accent: '#1a73e8',
+  border: '#333333',
+  secondaryText: '#b0b0b0',
 };
 
 export const lightTheme: Theme = {
-  background: '#f5f5f5',
-  cardBg: '#fff',
-  text: '#333',
-  accent: '#6200ea',
-  border: '#03dac6',
+  background: '#f0f2f5',
+  cardBg: '#ffffff',
+  text: '#000000',
+  accent: '#1a73e8',
+  border: '#e0e0e0',
+  secondaryText: '#606770',
 };

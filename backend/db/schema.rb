@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_26_151000) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_26_165000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -20,6 +20,63 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_151000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_celebrities_on_name", unique: true
+  end
+
+  create_table "fandom_posts", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "celebrity_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["celebrity_id"], name: "index_fandom_posts_on_celebrity_id"
+    t.index ["user_id"], name: "index_fandom_posts_on_user_id"
+  end
+
+  create_table "follows", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "celebrity_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["celebrity_id"], name: "index_follows_on_celebrity_id"
+    t.index ["user_id", "celebrity_id"], name: "index_follows_on_user_id_and_celebrity_id", unique: true
+    t.index ["user_id"], name: "index_follows_on_user_id"
+  end
+
+  create_table "group_members", force: :cascade do |t|
+    t.bigint "group_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["group_id", "user_id"], name: "index_group_members_on_group_id_and_user_id", unique: true
+    t.index ["group_id"], name: "index_group_members_on_group_id"
+    t.index ["user_id"], name: "index_group_members_on_user_id"
+  end
+
+  create_table "groups", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.bigint "creator_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["creator_id"], name: "index_groups_on_creator_id"
+  end
+
+  create_table "list_celebrities", force: :cascade do |t|
+    t.bigint "list_id", null: false
+    t.bigint "celebrity_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["celebrity_id"], name: "index_list_celebrities_on_celebrity_id"
+    t.index ["list_id", "celebrity_id"], name: "index_list_celebrities_on_list_id_and_celebrity_id", unique: true
+    t.index ["list_id"], name: "index_list_celebrities_on_list_id"
+  end
+
+  create_table "lists", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_lists_on_user_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -44,6 +101,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_151000) do
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
+  add_foreign_key "fandom_posts", "celebrities"
+  add_foreign_key "fandom_posts", "users"
+  add_foreign_key "follows", "celebrities"
+  add_foreign_key "follows", "users"
+  add_foreign_key "group_members", "groups"
+  add_foreign_key "group_members", "users"
+  add_foreign_key "groups", "users", column: "creator_id"
+  add_foreign_key "list_celebrities", "celebrities"
+  add_foreign_key "list_celebrities", "lists"
+  add_foreign_key "lists", "users"
   add_foreign_key "messages", "users", column: "receiver_id"
   add_foreign_key "messages", "users", column: "sender_id"
 end

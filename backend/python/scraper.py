@@ -22,11 +22,12 @@ def scrape_celebrity(name):
         resp = requests.get(wiki_url)
         soup = BeautifulSoup(resp.text, 'html.parser')
         bio = soup.find('p', class_=None).text if soup.find('p') else ""
-        img = soup.find('img', class_='mw-file-element')
-        img_url = f"https:{img['src']}" if img else ""
+        img = soup.find('img', class_='mw-file-element', alt=lambda x: x and name in x)  # Target actual celeb image
+        img_url = f"https:{img['src']}" if img else "https://via.placeholder.com/100"
         data["sources"]["wiki"] = {"bio": bio, "photo_url": img_url, "url": wiki_url}
     except Exception as e:
         print(f"Wiki error for {name}: {e}")
+        data["sources"]["wiki"] = {"bio": "", "photo_url": "https://via.placeholder.com/100", "url": wiki_url}
 
     tmz_url = f"{SOURCES['tmz']}{quote(name)}"
     try:
