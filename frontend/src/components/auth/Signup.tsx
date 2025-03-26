@@ -32,6 +32,14 @@ const Select = styled.select<{ theme: Theme }>`
   font-family: 'Inter', sans-serif;
 `;
 
+const CheckboxLabel = styled.label<{ theme: Theme }>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${({ theme }) => theme.text};
+  font-family: 'Inter', sans-serif;
+`;
+
 const Button = styled.button<{ theme: Theme }>`
   background: ${({ theme }) => theme.primary};
   color: white;
@@ -70,6 +78,7 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
   const [celebrityName, setCelebrityName] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [socialMediaLinks, setSocialMediaLinks] = useState({ twitter: "", instagram: "" });
+  const [isOver13, setIsOver13] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,6 +93,10 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isOver13) {
+      alert("You must be at least 13 years old to sign up.");
+      return;
+    }
     const userData = {
       user: {
         username,
@@ -108,7 +121,6 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
   };
 
   const handleSocialMediaLogin = (platform: string) => {
-    // Redirect to OAuth flow (simplified)
     window.location.href = `https://api.${platform}.com/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:3001/auth/${platform}/callback`;
   };
 
@@ -171,6 +183,14 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
           value={socialMediaLinks.instagram}
           onChange={(e) => setSocialMediaLinks({ ...socialMediaLinks, instagram: e.target.value })}
         />
+        <CheckboxLabel theme={theme}>
+          <input
+            type="checkbox"
+            checked={isOver13}
+            onChange={(e) => setIsOver13(e.target.checked)}
+          />
+          I confirm that I am at least 13 years old (18 for NSFW content).
+        </CheckboxLabel>
         <Button type="submit" theme={theme}>Sign Up</Button>
       </Form>
     </SignupWrapper>

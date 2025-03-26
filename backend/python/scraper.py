@@ -9,6 +9,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import time
 import random
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Database connection
 def get_db_connection():
@@ -60,7 +64,6 @@ def update_user_badge(user_id, badge_type):
         "UPDATE users SET badge = %s WHERE id = %s",
         (badge_type, user_id)
     )
-    # Send notification
     message = f"Congratulations! Your page now has a {badge_type.replace('_', ' ')} badge."
     cur.execute(
         "INSERT INTO notifications (user_id, message, read, created_at, updated_at) VALUES (%s, %s, %s, %s, %s)",
@@ -70,6 +73,16 @@ def update_user_badge(user_id, badge_type):
     cur.close()
     conn.close()
 
+# Proxy list (replace with actual proxies from a service like BrightData or Oxylabs)
+PROXIES = [
+    "http://proxy1:port",
+    "http://proxy2:port",
+    # Add more proxies here
+]
+
+def get_random_proxy():
+    return random.choice(PROXIES) if PROXIES else None
+
 # Selenium setup for dynamic scraping
 def setup_selenium():
     chrome_options = Options()
@@ -77,6 +90,9 @@ def setup_selenium():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+    proxy = get_random_proxy()
+    if proxy:
+        chrome_options.add_argument(f'--proxy-server={proxy}')
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
@@ -119,7 +135,7 @@ def google_search(query, search_type="text"):
             results["images_results"] = image_results[:3]
 
     except Exception as e:
-        print(f"Google search error for {query}: {e}")
+        logging.error(f"Google search error for {query}: {e}")
     finally:
         driver.quit()
 
@@ -147,39 +163,64 @@ def scrape_social_media_influencers():
     driver = setup_selenium()
 
     for platform in platforms:
-        print(f"Scraping {platform} for influencers...")
+        logging.info(f"Scraping {platform} for influencers...")
         try:
             base_url = SOURCES[platform]
             driver.get(base_url + quote("influencer"))
-            time.sleep(3)
+            time.sleep(random.uniform(3, 6))
 
             if platform == "social_youtube":
                 elements = driver.find_elements(By.XPATH, "//ytd-channel-renderer")
                 for elem in elements:
-                    name = elem.find_element(By.XPATH, ".//yt-formatted-string[@id='channel-title']").text
-                    subs = elem.find_element(By.XPATH, ".//span[@id='subscribers']").text
-                    if "K" in subs or "M" in subs:
-                        num = float(subs.replace("K", "").replace("M", "").replace(" subscribers", ""))
-                        if "M" in subs and num >= 0.3:
-                            influencers.add(name)
-                        elif "K" in subs and num >= 300:
-                            influencers.add(name)
+                    try:
+                        name = elem.find_element(By.XPATH, ".//yt-formatted-string[@id='channel-title']").text
+                        subs = elem.find_element(By.XPATH, ".//span[@id='subscribers']").text
+                        if "K" in subs or "M" in subs:
+                            num = float(subs.replace("K", "").replace("M", "").replace(" subscribers", ""))
+                            if "M" in subs and num >= 0.3:
+                                influencers.add(name)
+                            elif "K" in subs and num >= 300:
+                                influencers.add(name)
+                    except Exception as e:
+                        logging.warning(f"Error parsing YouTube channel: {e}")
+                        continue
 
             elif platform == "social_tiktok":
                 elements = driver.find_elements(By.XPATH, "//div[@class='tiktok-1soki6-DivUserCardContainer']")
                 for elem in elements:
-                    name = elem.find_element(By.XPATH, ".//p[@class='tiktok-1n8dzo-PUserName']").text
-                    followers = elem.find_element(By.XPATH, ".//p[@class='tiktok-1n8dzo-PUserStats']").text
-                    if "followers" in followers and ("K" in followers or "M" in followers):
-                        num = float(followers.split(" ")[0].replace("K", "").replace("M", ""))
+                    try:
+                        name = elem.find_element(By.XPATH, ".//p[@class='tiktok-1n8dzo-PUserName']").text
+                        followers = elem.find_element(By.XPATH, ".//p[@class='tiktok-1n8dzo-PUserStats']").text
+                        if "followers" in followers and ("K" in followers or "M" in followers):
+                            num = float(followers.split(" ")[0].replace("K", "").replace("M", ""))
+                            if "M" in followers and num >= 0.3:
+                                influencers.add(name)
+                            elif "K" in followers and num >= 300:
+                                influencers.add(name)
+                    except Exception as e:
+                        logging.warning(f"Error parsing TikTok user: {e}")
+                        continue
+
+            elif platform == "social_insta":
+                elements = driver.find_elements(By.XPATH, "//div[@role='button']//span[@class='_aacl _aaco _aacw _adda _aad1 _aaf6']")
+                for elem in elements:
+                    try:
+                        name = elem.text
+                        driver.get(f"https://www.instagram.com/{name}/")
+                        time.sleep(random.uniform(2, 4))
+                        followers = driver.find_element(By.XPATH, "//span[@class='_ac2a']").text
+                        num = float(followers.replace("K", "").replace("M", ""))
                         if "M" in followers and num >= 0.3:
                             influencers.add(name)
                         elif "K" in followers and num >= 300:
                             influencers.add(name)
+                    except Exception as e:
+                        logging.warning(f"Error parsing Instagram user: {e}")
+                        continue
 
         except Exception as e:
-            print(f"Error scraping {platform}: {e}")
-        time.sleep(1)
+            logging.error(f"Error scraping {platform}: {e}")
+        time.sleep(random.uniform(1, 3))
 
     driver.quit()
     return list(influencers)
@@ -207,39 +248,43 @@ def check_fan_fame(user):
     social_media_links = user["social_media_links"] or {}
     badge = None
 
-    # Check social media follower counts
     driver = setup_selenium()
     try:
         for platform, link in social_media_links.items():
             if not link:
                 continue
             driver.get(link)
-            time.sleep(3)
+            time.sleep(random.uniform(3, 6))
 
             if platform == "twitter":
-                follower_elem = driver.find_element(By.XPATH, "//span[contains(text(), 'followers')]")
-                followers = follower_elem.text.split()[0]
-                num = float(followers.replace("K", "").replace("M", ""))
-                if "M" in followers and num >= 0.3:
-                    badge = "internet_famous"
-                elif "K" in followers and num >= 300:
-                    badge = "internet_famous"
+                try:
+                    follower_elem = driver.find_element(By.XPATH, "//span[contains(text(), 'followers')]")
+                    followers = follower_elem.text.split()[0]
+                    num = float(followers.replace("K", "").replace("M", ""))
+                    if "M" in followers and num >= 0.3:
+                        badge = "internet_famous"
+                    elif "K" in followers and num >= 300:
+                        badge = "internet_famous"
+                except Exception as e:
+                    logging.warning(f"Error checking Twitter followers for {username}: {e}")
 
             elif platform == "instagram":
-                follower_elem = driver.find_element(By.XPATH, "//span[@class='_ac2a']")
-                followers = follower_elem.text
-                num = float(followers.replace("K", "").replace("M", ""))
-                if "M" in followers and num >= 0.3:
-                    badge = "internet_famous"
-                elif "K" in followers and num >= 300:
-                    badge = "internet_famous"
+                try:
+                    follower_elem = driver.find_element(By.XPATH, "//span[@class='_ac2a']")
+                    followers = follower_elem.text
+                    num = float(followers.replace("K", "").replace("M", ""))
+                    if "M" in followers and num >= 0.3:
+                        badge = "internet_famous"
+                    elif "K" in followers and num >= 300:
+                        badge = "internet_famous"
+                except Exception as e:
+                    logging.warning(f"Error checking Instagram followers for {username}: {e}")
 
     except Exception as e:
-        print(f"Error checking social media for {username}: {e}")
+        logging.error(f"Error checking social media for {username}: {e}")
     finally:
         driver.quit()
 
-    # Check for a Wikipedia page
     wiki_url = f"{SOURCES['wiki']}{quote(username.replace(' ', '_'))}"
     try:
         resp = requests.get(wiki_url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -248,21 +293,19 @@ def check_fan_fame(user):
     except:
         pass
 
-    # Check for magazine mentions
     results = google_search(f"{username} magazine interview OR feature", search_type="text")
     if "organic_results" in results and any("magazine" in result["title"].lower() for result in results["organic_results"]):
         badge = "famous"
 
     if badge:
         update_user_badge(user_id, badge)
-        print(f"Assigned {badge} badge to {username}")
+        logging.info(f"Assigned {badge} badge to {username}")
     return badge
 
 def scrape_celebrity(name):
     data = {"name": name, "sources": {}}
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
 
-    # Wikipedia scrape
     wiki_url = f"{SOURCES['wiki']}{quote(name.replace(' ', '_'))}"
     try:
         resp = requests.get(wiki_url, headers=headers)
@@ -273,12 +316,11 @@ def scrape_celebrity(name):
         img_url = f"https:{img['src']}" if img and 'src' in img.attrs and 'lock' not in img['src'] else None
         data["sources"]["wiki"] = {"bio": bio, "photo_url": img_url, "url": wiki_url}
     except Exception as e:
-        print(f"Wiki error for {name}: {e}")
+        logging.error(f"Wiki error for {name}: {e}")
         data["sources"]["wiki"] = {"bio": "", "photo_url": None, "url": wiki_url}
 
-    # If no bio or image, search the web
     if not data["sources"]["wiki"]["bio"] or not data["sources"]["wiki"]["photo_url"]:
-        print(f"Searching web for {name}...")
+        logging.info(f"Searching web for {name}...")
         results = google_search(f"{name} biography OR profile site:*.edu OR site:*.org OR site:*.gov -inurl:(signup OR login)", search_type="text")
         if "organic_results" in results:
             for result in results["organic_results"]:
@@ -305,7 +347,6 @@ def scrape_celebrity(name):
             if not data["sources"]["wiki"]["photo_url"]:
                 data["sources"]["wiki"]["photo_url"] = "https://via.placeholder.com/100"
 
-    # TMZ scrape
     tmz_url = f"{SOURCES['tmz']}{quote(name)}"
     try:
         resp = requests.get(tmz_url, headers=headers)
@@ -313,9 +354,8 @@ def scrape_celebrity(name):
         news = [{"title": a.text, "url": a['href']} for a in soup.select('.search-result__title a')[:3]]
         data["sources"]["tmz"] = {"news": news, "url": tmz_url}
     except Exception as e:
-        print(f"TMZ error for {name}: {e}")
+        logging.error(f"TMZ error for {name}: {e}")
 
-    # IMDb scrape
     imdb_url = f"{SOURCES['imdb']}{quote(name)}"
     try:
         resp = requests.get(imdb_url, headers=headers)
@@ -324,9 +364,8 @@ def scrape_celebrity(name):
         bio_url = f"https://www.imdb.com{bio_link['href']}" if bio_link else imdb_url
         data["sources"]["imdb"] = {"url": bio_url}
     except Exception as e:
-        print(f"IMDb error for {name}: {e}")
+        logging.error(f"IMDb error for {name}: {e}")
 
-    # Ethnic Celebs scrape
     ethnic_url = f"{SOURCES['ethnic_celebs']}{quote(name)}"
     try:
         resp = requests.get(ethnic_url, headers=headers)
@@ -334,9 +373,8 @@ def scrape_celebrity(name):
         race = soup.find('div', class_='entry-content') or ""
         data["sources"]["ethnic_celebs"] = {"race": race.text.strip() if race else "", "url": ethnic_url}
     except Exception as e:
-        print(f"Ethnic Celebs error for {name}: {e}")
+        logging.error(f"Ethnic Celebs error for {name}: {e}")
 
-    # Social media links
     twitter_url = f"{SOURCES['social_twitter']}{quote(name)}"
     insta_url = f"{SOURCES['social_insta']}{quote(name.replace(' ', ''))}"
     youtube_url = f"{SOURCES['social_youtube']}{quote(name)}"
@@ -356,7 +394,6 @@ def scrape_celebrity(name):
         "bluesky": {"url": bluesky_url}
     }
 
-    # Misc links
     data["sources"]["misc"] = {
         "nft": {"url": f"https://opensea.io/search?query={quote(name)}"},
         "dating": {"url": f"https://www.whosdatedwho.com/search?q={quote(name)}"},
@@ -381,45 +418,37 @@ def batch_update_celebrities(new_celebrities):
 
 # Main scraping logic
 def main():
-    # Get existing celebrities from database
     celebrities = get_celebrities_from_db()
 
-    # Scrape for influencers
     influencers = scrape_social_media_influencers()
-    print(f"Found {len(influencers)} influencers with over 300,000 followers.")
+    logging.info(f"Found {len(influencers)} influencers with over 300,000 followers.")
 
-    # Add business tycoons
     tycoons = get_business_tycoons()
-    print(f"Added {len(tycoons)} business tycoons.")
+    logging.info(f"Added {len(tycoons)} business tycoons.")
 
-    # Combine all names
     all_names = list(set(celebrities + influencers + tycoons))
-    print(f"Total unique names to scrape: {len(all_names)}")
+    logging.info(f"Total unique names to scrape: {len(all_names)}")
 
-    # Batch update database with new names
     new_names = [name for name in all_names if name not in celebrities]
     if new_names:
-        print(f"Adding {len(new_names)} new names to the database...")
+        logging.info(f"Adding {len(new_names)} new names to the database...")
         batch_update_celebrities(new_names)
 
-    # Scrape in batches and save to temporary JSON files
     batch_size = 50
     all_celebs = []
     for i in range(0, len(all_names), batch_size):
         batch = all_names[i:i + batch_size]
-        print(f"Scraping batch {i // batch_size + 1} of {len(all_names) // batch_size + 1}...")
+        logging.info(f"Scraping batch {i // batch_size + 1} of {len(all_names) // batch_size + 1}...")
         batch_data = [scrape_celebrity(name) for name in batch]
         all_celebs.extend(batch_data)
         with open(f'celebrities_batch_{i // batch_size + 1}.json', 'w') as f:
             json.dump(batch_data, f, indent=2)
         time.sleep(5)
 
-    # Combine all batches into final file
     with open('celebrities.json', 'w') as f:
         json.dump(all_celebs, f, indent=2)
-    print(f"Scraped {len(all_celebs)} celebrities!")
+    logging.info(f"Scraped {len(all_celebs)} celebrities!")
 
-    # Check fans for fame
     users = get_users_from_db()
     for user in users:
         check_fan_fame(user)

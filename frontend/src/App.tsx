@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { darkTheme, lightTheme, Theme } from './themes';
 import Signup from './components/auth/Signup';
+import TermsAndConditions from './components/legal/TermsAndConditions';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import LeftSidebar from './components/layout/LeftSidebar';
@@ -181,7 +182,8 @@ const App: React.FC = () => {
                 }
               />
 	      <Route path="/signup" element={<Signup theme={theme} />} />
-              <Route path="/notifications" element={<Notifications theme={theme} />} />
+              <Route path="/terms" element={<TermsAndConditions theme={theme} />} />
+	      <Route path="/notifications" element={<Notifications theme={theme} />} />
               <Route path="/lists" element={<Lists theme={theme} lists={mockLists} />} />
               <Route path="/groups" element={<Groups theme={theme} groups={mockGroups} />} />
               <Route path="/fandom" element={<Fandom theme={theme} posts={mockPosts} />} />
