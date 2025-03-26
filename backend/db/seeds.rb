@@ -1,7 +1,18 @@
-require 'json'
+# Clear existing data
+ScrapedCelebrity.destroy_all
 
-json_path = Rails.root.join('python', 'celebrities.json')
-celebs = JSON.parse(File.read(json_path))
-celebs.each do |celeb|
-  Celebrity.create!(name: celeb['name'], json_path: json_path.to_s)
+# Seed initial celebrities
+initial_celebrities = [
+  "Billie Eilish",
+  "Zendaya",
+  "Lynette Adkins",
+  "Timothée Chalamet",
+  "Ariana Grande",
+  "Harry Styles"
+]
+
+initial_celebrities.each do |name|
+  ScrapedCelebrity.create!(name: name)
 end
+
+puts "Seeded #{ScrapedCelebrity.count} celebrities!"

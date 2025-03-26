@@ -9,6 +9,13 @@ Rails.application.routes.draw do
     resources :groups, only: [:index, :create, :show] do
       resources :members, only: [:create, :destroy], controller: 'group_members'
     end
-    resources :fandom_posts, only: [:index, :create]
+    resources :fandom_posts, only: [:index, :create] do
+      resources :likes, only: [:create, :destroy]
+      resources :comments, only: [:create] do
+        resources :replies, only: [:create]
+      end
+      resources :shares, only: [:create, :destroy]
+    end
+    resources :scraped_celebrities, only: [:index, :create]
   end
 end

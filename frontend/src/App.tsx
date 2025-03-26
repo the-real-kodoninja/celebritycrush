@@ -14,6 +14,19 @@ import Lists from './components/lists/Lists';
 import Groups from './components/groups/Groups';
 import Fandom from './components/fandom/Fandom';
 import SearchPage from './components/search/SearchPage';
+import UserFeed from './components/user_feed/UserFeed';
+
+const GlobalStyles = styled.div`
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+`;
 
 const MainContent = styled.div<{ theme: Theme; sidebarOpen: boolean }>`
   margin-left: 0;
@@ -27,6 +40,7 @@ const MainContent = styled.div<{ theme: Theme; sidebarOpen: boolean }>`
 `;
 
 interface Celebrity {
+  id: number;
   name: string;
   data: {
     sources: {
@@ -85,7 +99,7 @@ const App: React.FC = () => {
   };
 
   const mockPosts = followedCelebs.map(celeb => ({
-    user: 'kodoninja',
+    user: { username: 'kodoninja' },
     content: `Obsessed with ${celeb}!`,
     celebrity: celeb,
   }));
@@ -101,10 +115,18 @@ const App: React.FC = () => {
   ];
 
   const celebrities = celebs.map(celeb => ({
+    id: celeb.id,
     name: celeb.name,
     photo_url: celeb.data.sources.wiki?.photo_url || 'https://via.placeholder.com/100',
     bio: celeb.data.sources.wiki?.bio || 'No bio available.',
-    posts: mockPosts.filter(post => post.celebrity === celeb.name),
+    posts: mockPosts.filter(post => post.celebrity === celeb.name).map(post => ({
+      id: Date.now(),
+      user: post.user,
+      content: post.content,
+      likes: [],
+      comments: [],
+      shares: []
+    }))
   }));
 
   const SearchWrapper: React.FC = () => {
@@ -115,57 +137,59 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <Header
-        theme={theme}
-        toggleTheme={toggleTheme}
-        isLoggedIn={isLoggedIn}
-        onLoginClick={handleLoginClick}
-        onToggleSidebar={toggleSidebar}
-        celebrities={celebrities}
-      />
-      <LeftSidebar theme={theme} isOpen={sidebarOpen} />
-      <MainContent theme={theme} sidebarOpen={sidebarOpen}>
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <Routes>
-            <Route
-              path="/feed"
-              element={<Feed theme={theme} posts={mockPosts} />}
-            />
-            <Route
-              path="/explore"
-              element={celebs.map(celeb => (
-                <FaceCard
-                  key={celeb.name}
-                  theme={theme}
-                  name={celeb.name}
-                  photo_url={celeb.data.sources.wiki?.photo_url || 'https://via.placeholder.com/100'}
-                  onFollow={handleFollow}
-                  onCrush={handleCrush}
-                />
-              ))}
-            />
-            <Route path="/lists" element={<Lists theme={theme} lists={mockLists} />} />
-            <Route path="/groups" element={<Groups theme={theme} groups={mockGroups} />} />
-            <Route path="/fandom" element={<Fandom theme={theme} posts={mockPosts} />} />
-            <Route path="/profile" element={<UserPage theme={theme} username="kodoninja" bio="Crushing it!" />} />
-            <Route path="/messages" element={<Messages theme={theme} />} />
-            <Route path="/search" element={<SearchWrapper />} />
-            <Route
-              path="/celebrity/:name"
-              element={
-                <CelebrityPage
-                  theme={theme}
-                  celebrity={celebrities.find(c => c.name === window.location.pathname.split('/').pop()) || celebrities[0]}
-                />
-              }
-            />
-            <Route path="/" element={<Navigate to="/feed" />} />
-          </Routes>
-        )}
-      </MainContent>
-      <Footer theme={theme} />
+      <GlobalStyles>
+        <Header
+          theme={theme}
+          toggleTheme={toggleTheme}
+          isLoggedIn={isLoggedIn}
+          onLoginClick={handleLoginClick}
+          onToggleSidebar={toggleSidebar}
+          celebrities={celebrities}
+        />
+        <LeftSidebar theme={theme} isOpen={sidebarOpen} />
+        <MainContent theme={theme} sidebarOpen={sidebarOpen}>
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
+            <Routes>
+              <Route
+                path="/feed"
+                element={<UserFeed theme={theme} userId={1} />}
+              />
+              <Route
+                path="/explore"
+                element={celebs.map(celeb => (
+                  <FaceCard
+                    key={celeb.name}
+                    theme={theme}
+                    name={celeb.name}
+                    photo_url={celeb.data.sources.wiki?.photo_url || 'https://via.placeholder.com/100'}
+                    onFollow={handleFollow}
+                    onCrush={handleCrush}
+                  />
+                ))}
+              />
+              <Route path="/lists" element={<Lists theme={theme} lists={mockLists} />} />
+              <Route path="/groups" element={<Groups theme={theme} groups={mockGroups} />} />
+              <Route path="/fandom" element={<Fandom theme={theme} posts={mockPosts} />} />
+              <Route path="/profile" element={<UserPage theme={theme} username="kodoninja" bio="Crushing it!" />} />
+              <Route path="/messages" element={<Messages theme={theme} />} />
+              <Route path="/search" element={<SearchWrapper />} />
+              <Route
+                path="/celebrity/:name"
+                element={
+                  <CelebrityPage
+                    theme={theme}
+                    celebrity={celebrities.find(c => c.name === window.location.pathname.split('/').pop()) || celebrities[0]}
+                  />
+                }
+              />
+              <Route path="/" element={<Navigate to="/feed" />} />
+            </Routes>
+          )}
+        </MainContent>
+        <Footer theme={theme} />
+      </GlobalStyles>
     </Router>
   );
 };

@@ -21,6 +21,7 @@ const Logo = styled.h1<{ theme: Theme }>`
   margin: 0;
   color: ${({ theme }) => theme.accent};
   font-weight: 700;
+  font-family: 'Inter', sans-serif;
 `;
 
 const SearchWrapper = styled.div`
@@ -39,6 +40,12 @@ const Search = styled.input<{ theme: Theme }>`
   border: 1px solid ${({ theme }) => theme.border};
   width: 100%;
   font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s;
+  &:focus {
+    border-color: ${({ theme }) => theme.accent};
+    outline: none;
+  }
 `;
 
 const Dropdown = styled.div<{ theme: Theme }>`
@@ -52,17 +59,25 @@ const Dropdown = styled.div<{ theme: Theme }>`
   max-height: 300px;
   overflow-y: auto;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.2s ease-in-out;
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 `;
 
 const DropdownItem = styled(Link)<{ theme: Theme }>`
   display: flex;
   align-items: center;
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   text-decoration: none;
   color: ${({ theme }) => theme.text};
+  font-family: 'Inter', sans-serif;
+  transition: background 0.2s;
   &:hover {
     background: ${({ theme }) => theme.background};
+    color: ${({ theme }) => theme.accent};
   }
 `;
 
@@ -71,6 +86,7 @@ const DropdownImage = styled.img`
   height: 40px;
   border-radius: 50%;
   margin-right: 0.5rem;
+  object-fit: cover;
 `;
 
 const Menu = styled.div<{ theme: Theme }>`
@@ -82,15 +98,23 @@ const Menu = styled.div<{ theme: Theme }>`
 const UserIcon = styled.div<{ theme: Theme }>`
   width: 2rem;
   height: 2rem;
-  background: ${({ theme }) => theme.accent};
+  background: ${({ theme }) => theme.gradient};
   border-radius: 50%;
   cursor: pointer;
+  transition: transform 0.2s;
+  &:hover {
+    transform: scale(1.1);
+  }
 `;
 
 const Hamburger = styled.div<{ theme: Theme }>`
   font-size: 1.5rem;
   color: ${({ theme }) => theme.text};
   cursor: pointer;
+  transition: color 0.2s;
+  &:hover {
+    color: ${({ theme }) => theme.accent};
+  }
 `;
 
 interface HeaderProps {
@@ -138,7 +162,7 @@ const Header: React.FC<HeaderProps> = ({ theme, toggleTheme, isLoggedIn, onLogin
         )}
       </SearchWrapper>
       <Menu theme={theme}>
-        <Button theme={theme} onClick={toggleTheme}>
+        <Button theme={theme} onClick={toggleTheme} style={{ background: theme.gradient }}>
           {theme === darkTheme ? 'Light' : 'Dark'}
         </Button>
         <UserIcon theme={theme} onClick={onLoginClick} />

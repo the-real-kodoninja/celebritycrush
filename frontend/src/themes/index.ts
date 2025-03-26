@@ -5,6 +5,7 @@ export interface Theme {
   accent: string;
   border: string;
   secondaryText: string;
+  gradient: string;
 }
 
 export const darkTheme: Theme = {
@@ -14,6 +15,7 @@ export const darkTheme: Theme = {
   accent: '#1a73e8',
   border: '#333333',
   secondaryText: '#b0b0b0',
+  gradient: 'linear-gradient(45deg, #1a73e8, #00ddeb)',
 };
 
 export const lightTheme: Theme = {
@@ -23,4 +25,5 @@ export const lightTheme: Theme = {
   accent: '#1a73e8',
   border: '#e0e0e0',
   secondaryText: '#606770',
+  gradient: 'linear-gradient(45deg, #1a73e8, #00ddeb)',
 };

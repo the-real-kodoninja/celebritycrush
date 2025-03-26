@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_26_165000) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_26_171249) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,12 +22,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_165000) do
     t.index ["name"], name: "index_celebrities_on_name", unique: true
   end
 
+  create_table "comments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "fandom_post_id", null: false
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fandom_post_id"], name: "index_comments_on_fandom_post_id"
+    t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
   create_table "fandom_posts", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "celebrity_id", null: false
     t.text "content", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "media_url"
+    t.string "media_type"
     t.index ["celebrity_id"], name: "index_fandom_posts_on_celebrity_id"
     t.index ["user_id"], name: "index_fandom_posts_on_user_id"
   end
@@ -61,6 +73,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_165000) do
     t.index ["creator_id"], name: "index_groups_on_creator_id"
   end
 
+  create_table "likes", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "fandom_post_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fandom_post_id"], name: "index_likes_on_fandom_post_id"
+    t.index ["user_id"], name: "index_likes_on_user_id"
+  end
+
   create_table "list_celebrities", force: :cascade do |t|
     t.bigint "list_id", null: false
     t.bigint "celebrity_id", null: false
@@ -89,6 +110,32 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_165000) do
     t.index ["sender_id"], name: "index_messages_on_sender_id"
   end
 
+  create_table "replies", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "comment_id", null: false
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["comment_id"], name: "index_replies_on_comment_id"
+    t.index ["user_id"], name: "index_replies_on_user_id"
+  end
+
+  create_table "scraped_celebrities", force: :cascade do |t|
+    t.string "name"
+    t.datetime "scraped_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "shares", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "fandom_post_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fandom_post_id"], name: "index_shares_on_fandom_post_id"
+    t.index ["user_id"], name: "index_shares_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "username", null: false
     t.string "email", null: false
@@ -101,6 +148,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_165000) do
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
+  add_foreign_key "comments", "fandom_posts"
+  add_foreign_key "comments", "users"
   add_foreign_key "fandom_posts", "celebrities"
   add_foreign_key "fandom_posts", "users"
   add_foreign_key "follows", "celebrities"
@@ -108,9 +157,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_26_165000) do
   add_foreign_key "group_members", "groups"
   add_foreign_key "group_members", "users"
   add_foreign_key "groups", "users", column: "creator_id"
+  add_foreign_key "likes", "fandom_posts"
+  add_foreign_key "likes", "users"
   add_foreign_key "list_celebrities", "celebrities"
   add_foreign_key "list_celebrities", "lists"
   add_foreign_key "lists", "users"
   add_foreign_key "messages", "users", column: "receiver_id"
   add_foreign_key "messages", "users", column: "sender_id"
+  add_foreign_key "replies", "comments"
+  add_foreign_key "replies", "users"
+  add_foreign_key "shares", "fandom_posts"
+  add_foreign_key "shares", "users"
 end
