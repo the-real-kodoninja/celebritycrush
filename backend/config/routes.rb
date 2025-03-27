@@ -22,10 +22,29 @@ Rails.application.routes.draw do
       member do
         post :approve
       end
+      resources :reviews, only: [:create]
     end
     resources :licenses, only: [:create] do
       member do
         post :approve
+      end
+    end
+    resources :payments, only: [:create]
+    resources :conversations, only: [:index, :show, :create] do
+      resources :messages, only: [:index, :create]
+    end
+  end
+  namespace :admin do
+    resources :marketplace_items, only: [:index] do
+      member do
+        post :approve
+        post :reject
+      end
+    end
+    resources :licenses, only: [:index] do
+      member do
+        post :approve
+        post :reject
       end
     end
   end

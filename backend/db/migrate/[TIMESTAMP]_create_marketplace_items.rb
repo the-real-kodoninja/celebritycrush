@@ -1,4 +1,4 @@
-class CreateMarketplaceItems < ActiveRecord::Migration[7.0]
+class CreateMarketplaceItems < ActiveRecord::Migration[8.0]
   def change
     create_table :marketplace_items do |t|
       t.references :user, null: false, foreign_key: true
@@ -6,9 +6,8 @@ class CreateMarketplaceItems < ActiveRecord::Migration[7.0]
       t.text :description
       t.decimal :price
       t.string :image_url
-      t.string :status, default: "pending"
       t.string :celebrity_name
-      t.boolean :approved, default: false
+      t.string :status, default: "pending"
 
       t.timestamps
     end

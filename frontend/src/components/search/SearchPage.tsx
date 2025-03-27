@@ -52,6 +52,13 @@ const FilterButton = styled.button<{ theme: Theme; active: boolean }>`
   transition: background 0.2s, color 0.2s;
 `;
 
+const Select = styled.select<{ theme: Theme }>`
+  padding: 0.5rem;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+`;
+
 const ResultsWrapper = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -106,7 +113,9 @@ interface SearchPageProps {
 
 const SearchPage: React.FC<SearchPageProps> = ({ theme, celebrities, onFollow, onCrush, searchQuery }) => {
   const [query, setQuery] = useState(searchQuery);
-  const [filter, setFilter] = useState('all');
+  const [fameFilter, setFameFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
   const [filteredResults, setFilteredResults] = useState(celebrities);
 
   useEffect(() => {
@@ -114,15 +123,25 @@ const SearchPage: React.FC<SearchPageProps> = ({ theme, celebrities, onFollow, o
     let results = celebrities.filter(celeb =>
       celeb.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    if (filter !== 'all') {
+
+    if (fameFilter !== 'all') {
       results = results.filter(celeb => {
-        if (filter === 'internet_famous') return celeb.badge === 'internet_famous';
-        if (filter === 'famous') return celeb.badge === 'famous';
+        if (fameFilter === 'internet_famous') return celeb.badge === 'internet_famous';
+        if (fameFilter === 'famous') return celeb.badge === 'famous';
         return true;
       });
     }
+
+    if (categoryFilter !== 'all') {
+      results = results.filter(celeb => celeb.category === categoryFilter);
+    }
+
+    if (locationFilter !== 'all') {
+      results = results.filter(celeb => celeb.location === locationFilter);
+    }
+
     setFilteredResults(results);
-  }, [searchQuery, filter, celebrities]);
+  }, [searchQuery, fameFilter, categoryFilter, locationFilter, celebrities]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,25 +162,39 @@ const SearchPage: React.FC<SearchPageProps> = ({ theme, celebrities, onFollow, o
         <FilterWrapper>
           <FilterButton
             theme={theme}
-            active={filter === 'all'}
-            onClick={() => setFilter('all')}
+            active={fameFilter === 'all'}
+            onClick={() => setFameFilter('all')}
           >
-            All
+            All Fame Levels
           </FilterButton>
           <FilterButton
             theme={theme}
-            active={filter === 'internet_famous'}
-            onClick={() => setFilter('internet_famous')}
+            active={fameFilter === 'internet_famous'}
+            onClick={() => setFameFilter('internet_famous')}
           >
             Internet Famous
           </FilterButton>
           <FilterButton
             theme={theme}
-            active={filter === 'famous'}
-            onClick={() => setFilter('famous')}
+            active={fameFilter === 'famous'}
+            onClick={() => setFameFilter('famous')}
           >
             Famous
           </FilterButton>
+          <Select theme={theme} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <option value="all">All Categories</option>
+            <option value="actor">Actor</option>
+            <option value="musician">Musician</option>
+            <option value="influencer">Influencer</option>
+            <option value="business_tycoon">Business Tycoon</option>
+          </Select>
+          <Select theme={theme} value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
+            <option value="all">All Locations</option>
+            <option value="usa">USA</option>
+            <option value="uk">UK</option>
+            <option value="india">India</option>
+            <option value="australia">Australia</option>
+          </Select>
         </FilterWrapper>
       </SearchHeader>
       <ResultsWrapper>

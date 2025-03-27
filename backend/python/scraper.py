@@ -1,18 +1,18 @@
 import requests
-from bs4 import BeautifulSoup
-import json
-from urllib.parse import quote
-import psycopg2
-from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.chrome.options
-from proxies.proxy_manager import get_working_proxy
-from proxies.captcha_solver import solve_audio_captcha
-import Options
-from selenium.webdriver.common.by import By
-import time
-import random
 import logging
+import random
+import time
+from urllib.parse import quote
+from bs4 import BeautifulSoup
+from datetime import datetime
+import psycopg2
+from proxies.proxy_manager import get_working_proxy
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options  # Fixed this line
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from proxies.captcha_solver import solve_recaptcha
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -114,7 +114,7 @@ def google_search(query, search_type="text"):
 
             # Check for CAPTCHA
             if "recaptcha" in driver.page_source.lower():
-                solve_audio_captcha(driver)
+                solve_recaptcha(driver)
                 time.sleep(2)
 
             soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -137,7 +137,7 @@ def google_search(query, search_type="text"):
             time.sleep(random.uniform(2, 5))
 
             if "recaptcha" in driver.page_source.lower():
-                solve_audio_captcha(driver)
+                solve_recaptcha(driver)
                 time.sleep(2)
 
             soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -320,6 +320,10 @@ def scrape_celebrity(name):
     data = {"name": name, "sources": {}}
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
 
+    # Initialize category and location
+    data["category"] = "unknown"
+    data["location"] = "unknown"
+
     wiki_url = f"{SOURCES['wiki']}{quote(name.replace(' ', '_'))}"
     try:
         resp = requests.get(wiki_url, headers=headers)
@@ -329,9 +333,30 @@ def scrape_celebrity(name):
         img = img.find('img') if img else None
         img_url = f"https:{img['src']}" if img and 'src' in img.attrs and 'lock' not in img['src'] else None
         data["sources"]["wiki"] = {"bio": bio, "photo_url": img_url, "url": wiki_url}
+
+        # Detect category
+        if "actor" in bio.lower() or "actress" in bio.lower():
+            data["category"] = "actor"
+        elif "singer" in bio.lower() or "musician" in bio.lower():
+            data["category"] = "musician"
+        elif "influencer" in bio.lower() or "youtuber" in bio.lower():
+            data["category"] = "influencer"
+        elif "business" in bio.lower() or "entrepreneur" in bio.lower():
+            data["category"] = "business_tycoon"
+
+        # Detect location (simplified)
+        if "american" in bio.lower() or "usa" in bio.lower():
+            data["location"] = "usa"
+        elif "british" in bio.lower() or "uk" in bio.lower():
+            data["location"] = "uk"
+        elif "indian" in bio.lower() or "india" in bio.lower():
+            data["location"] = "india"
+        elif "australian" in bio.lower() or "australia" in bio.lower():
+            data["location"] = "australia"
     except Exception as e:
         logging.error(f"Wiki error for {name}: {e}")
         data["sources"]["wiki"] = {"bio": "", "photo_url": None, "url": wiki_url}
+
 
     if not data["sources"]["wiki"]["bio"] or not data["sources"]["wiki"]["photo_url"]:
         logging.info(f"Searching web for {name}...")
@@ -421,10 +446,15 @@ def scrape_celebrity(name):
 def batch_update_celebrities(new_celebrities):
     conn = get_db_connection()
     cur = conn.cursor()
-    for name in new_celebrities:
+    for celeb in new_celebrities:
         cur.execute(
-            "INSERT INTO scraped_celebrities (name, created_at, updated_at) VALUES (%s, %s, %s) ON CONFLICT (name) DO NOTHING",
-            (name, datetime.now(), datetime.now())
+            """
+            INSERT INTO scraped_celebrities (name, category, location, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (name) DO UPDATE
+            SET category = EXCLUDED.category, location = EXCLUDED.location
+            """,
+            (celeb["name"], celeb["category"], celeb["location"], datetime.now(), datetime.now())
         )
     conn.commit()
     cur.close()

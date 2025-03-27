@@ -1,70 +1,81 @@
 #!/bin/bash
 
-# Setup script for CelebrityCrush
-BASE_DIR="$HOME/celebritycrush"
-echo "Starting setup in $BASE_DIR..."
+# Exit on error
+set -e
 
-# Update package list and install dependencies
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}Starting setup for CelebrityCrush...${NC}"
+
+# Update package lists
+echo -e "${GREEN}Updating package lists...${NC}"
 sudo apt update
-sudo apt install -y libpq-dev postgresql postgresql-contrib python3-venv
 
-# Start PostgreSQL
-sudo service postgresql start
+# Install system dependencies
+echo -e "${GREEN}Installing system dependencies...${NC}"
+sudo apt install -y build-essential libpq-dev nodejs npm python3 python3-pip python3-venv libsqlite3-dev squid
 
-# Install Ruby (via rbenv)
+# Install rbenv and Ruby
 if ! command -v rbenv &> /dev/null; then
-    echo "Installing rbenv and ruby-build..."
-    sudo apt install -y git curl libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libncurses5-dev libffi-dev libgdbm-dev
+    echo -e "${GREEN}Installing rbenv and Ruby...${NC}"
     git clone https://github.com/rbenv/rbenv.git ~/.rbenv
     echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
     echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+    source ~/.bashrc
     git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-fi
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
-rbenv install 3.2.2 -s
-rbenv global 3.2.2
-
-# Install Node.js (via nvm)
-if ! command -v nvm &> /dev/null; then
-    echo "Installing nvm and Node.js..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    nvm install 20
-    nvm use 20
-else
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    nvm use 20 || nvm install 20
+    rbenv install 3.2.2
+    rbenv global 3.2.2
 fi
 
-# Install Yarn (optional)
-npm install -g yarn
-
-# Backend setup
-cd "$BASE_DIR/backend"
-echo "Installing Ruby gems..."
+# Install Ruby dependencies
+echo -e "${GREEN}Installing Ruby dependencies...${NC}"
+cd ~/celebritycrush/backend
 gem install bundler
 bundle install
-rails db:drop db:create db:migrate db:seed
 
-# Frontend setup
-cd "$BASE_DIR/frontend"
-echo "Installing Node packages..."
+# Install Node.js dependencies
+echo -e "${GREEN}Installing Node.js dependencies...${NC}"
+cd ~/celebritycrush/frontend
 npm install
+npm install @stripe/stripe-js @stripe/react-stripe-js
 
-# Python setup
-cd "$BASE_DIR"
-echo "Setting up Python virtual env..."
-rm -rf ~/celebritycrush_venv
-python3 -m venv ~/celebritycrush_venv
+# Set up Python virtual environment and dependencies
+echo -e "${GREEN}Setting up Python virtual environment...${NC}"
+cd ~/celebritycrush/backend/python
+if [ ! -d "~/celebritycrush_venv" ]; then
+    python3 -m venv ~/celebritycrush_venv
+fi
 source ~/celebritycrush_venv/bin/activate
-pip install requests beautifulsoup4 google-api-python-client
+pip install requests beautifulsoup4 psycopg2-binary selenium webdriver-manager 2captcha-python
 
-# Copy to external drive (optional)
-cp -r "$BASE_DIR" "/mnt/chromeos/removable/New Volume/Documents/web-os/"
+# Set up environment variables
+echo -e "${GREEN}Setting up environment variables...${NC}"
+cat <<EOL >> ~/.bashrc
+export STRIPE_SECRET_KEY="your_stripe_secret_key"
+export STRIPE_PUBLISHABLE_KEY="your_stripe_publishable_key"
+export TWITTER_CLIENT_ID="your_twitter_client_id"
+export TWITTER_CLIENT_SECRET="your_twitter_client_secret"
+export GOOGLE_CLIENT_ID="your_google_client_id"
+export GOOGLE_CLIENT_SECRET="your_google_client_secret"
+export TWITCH_CLIENT_ID="your_twitch_client_id"
+export TWITCH_CLIENT_SECRET="your_twitch_client_secret"
+export DEVISE_SECRET_KEY="your_devise_secret_key_here"
+EOL
+source ~/.bashrc
 
-echo "Setup complete! Run servers with:"
-echo "Backend: cd $BASE_DIR/backend && rails s"
-echo "Frontend: cd $BASE_DIR/frontend && npm start"
+# Configure Squid proxy (if needed)
+echo -e "${GREEN}Configuring Squid proxy...${NC}"
+sudo bash -c 'cat <<EOL > /etc/squid/squid.conf
+http_port 3128
+acl localnet src 0.0.0.0/0
+http_access allow localnet
+http_access deny all
+EOL'
+sudo systemctl restart squid
+
+echo -e "${GREEN}Setup complete!${NC}"
+echo -e "${GREEN}To start the Rails server, run: cd ~/celebritycrush/backend && rails s${NC}"
+echo -e "${GREEN}To start the frontend, run: cd ~/celebritycrush/frontend && npm start${NC}"

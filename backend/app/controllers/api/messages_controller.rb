@@ -1,11 +1,15 @@
 class Api::MessagesController < ApplicationController
+  before_action :authenticate_user!
+  before_action :set_conversation
+
   def index
-    @messages = Message.where(receiver_id: params[:user_id])
+    @messages = @conversation.messages
     render json: @messages
   end
 
   def create
-    @message = Message.new(message_params)
+    @message = @conversation.messages.build(message_params)
+    @message.sender = current_user
     if @message.save
       render json: @message, status: :created
     else
@@ -15,7 +19,11 @@ class Api::MessagesController < ApplicationController
 
   private
 
+  def set_conversation
+    @conversation = current_user.conversations.find(params[:conversation_id])
+  end
+
   def message_params
-    params.require(:message).permit(:sender_id, :receiver_id, :content)
+    params.require(:message).permit(:body)
   end
 end

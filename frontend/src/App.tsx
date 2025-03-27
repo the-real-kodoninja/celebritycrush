@@ -18,6 +18,7 @@ import SearchPage from './components/search/SearchPage';
 import UserFeed from './components/user_feed/UserFeed';
 import Notifications from './components/notifications/Notifications';
 import Marketplace from './components/marketplace/Marketplace';
+import ModerationDashboard from './components/admin/ModerationDashboard';
 
 const GlobalStyles = styled.div`
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
@@ -191,6 +192,7 @@ const App: React.FC = () => {
               <Route path="/profile" element={<UserPage theme={theme} username="kodoninja" bio="Crushing it!" />} />
               <Route path="/messages" element={<Messages theme={theme} />} />
               <Route path="/search" element={<SearchWrapper />} />
+              <Route path="/admin/moderation" element={<ModerationDashboard theme={theme} />} />
               <Route path="/marketplace" element={<Marketplace theme={theme} />} />
               <Route
                 path="/celebrity/:name"

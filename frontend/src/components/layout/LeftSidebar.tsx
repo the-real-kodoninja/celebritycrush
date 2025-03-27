@@ -1,6 +1,7 @@
 import styled from '@emotion/styled';
 import { Theme } from '../../themes';
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const SidebarWrapper = styled.div<{ theme: Theme; isOpen: boolean }>`
   width: 250px;
@@ -52,6 +53,16 @@ interface LeftSidebarProps {
 }
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({ theme, isOpen }) => {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/users/current', {
+      headers: { 'Authorization': 'Bearer your_jwt_token_here' }
+    })
+      .then(res => res.json())
+      .then(data => setIsAdmin(data.admin));
+  }, []);
+
   return (
     <SidebarWrapper theme={theme} isOpen={isOpen}>
       <NavList>
@@ -82,6 +93,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ theme, isOpen }) => {
         <NavItem>
           <NavLink to="/profile" theme={theme}>👤 Profile</NavLink>
         </NavItem>
+        {isAdmin && (
+          <NavItem>
+            <NavLink to="/admin/moderation" theme={theme}>🛠️ Moderation</NavLink>
+          </NavItem>
+        )}
       </NavList>
     </SidebarWrapper>
   );

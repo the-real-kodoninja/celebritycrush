@@ -11,9 +11,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     handle_auth("Twitch")
   end
 
-  def bluesky
-    handle_auth("Bluesky")
-  end
+  # Removed bluesky method
 
   private
 
@@ -22,7 +20,6 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     user = User.from_omniauth(auth)
 
     if user.persisted?
-      # Check fame via social media followers
       follower_count = fetch_follower_count(auth)
       user.update(follower_count: follower_count)
       if follower_count >= 300_000
@@ -48,8 +45,6 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       0 # Google doesn't provide follower count; use YouTube API if needed
     when "twitch"
       auth.extra.raw_info.followers
-    when "bluesky"
-      auth.extra.raw_info.followers_count || 0
     else
       0
     end

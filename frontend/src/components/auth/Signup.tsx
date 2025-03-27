@@ -213,9 +213,6 @@ const Signup: React.FC<SignupProps> = ({ theme }) => {
         <OAuthButton provider="twitch" theme={theme} onClick={() => handleOAuthLogin("twitch")}>
           Twitch
         </OAuthButton>
-        <OAuthButton provider="bluesky" theme={theme} onClick={() => handleOAuthLogin("bluesky")}>
-          Bluesky
-        </OAuthButton>
       </Form>
     </SignupWrapper>
   );
