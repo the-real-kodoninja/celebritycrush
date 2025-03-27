@@ -15,6 +15,9 @@ const SidebarWrapper = styled.div<{ theme: Theme; isOpen: boolean }>`
   transition: transform 0.3s ease-in-out;
   z-index: 999;
   padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   @media (min-width: 768px) {
     transform: translateX(0);
   }
@@ -47,12 +50,30 @@ const NavLink = styled(Link)<{ theme: Theme }>`
   }
 `;
 
+const ThemeToggleButton = styled.button<{ theme: Theme }>`
+  background: ${({ theme }) => theme.accent};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+  &:hover {
+    background: ${({ theme }) => theme.accent + 'cc'};
+  }
+`;
+
 interface LeftSidebarProps {
   theme: Theme;
   isOpen: boolean;
+  toggleTheme: () => void; // Add toggleTheme prop
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ theme, isOpen }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ theme, isOpen, toggleTheme }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -88,6 +109,9 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ theme, isOpen }) => {
           <NavLink to="/messages" theme={theme}>💬 Messages</NavLink>
         </NavItem>
         <NavItem>
+          <NavLink to="/messaging" theme={theme}>💬 New Messaging</NavLink>
+        </NavItem>
+        <NavItem>
           <NavLink to="/notifications" theme={theme}>🔔 Notifications</NavLink>
         </NavItem>
         <NavItem>
@@ -99,6 +123,9 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ theme, isOpen }) => {
           </NavItem>
         )}
       </NavList>
+      <ThemeToggleButton theme={theme} onClick={toggleTheme}>
+        {theme === lightTheme ? '🌙 Dark Mode' : '☀️ Light Mode'}
+      </ThemeToggleButton>
     </SidebarWrapper>
   );
 };

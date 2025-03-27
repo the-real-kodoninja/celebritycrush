@@ -18,12 +18,26 @@ class User < ApplicationRecord
   validates :username, presence: true, uniqueness: true
   validates :page_type, inclusion: { in: %w[fan celebrity] }
 
+  # New fields for Internet famous criteria
+  store :social_metrics, accessors: [:follower_count, :engagement_rate, :last_post_date, :verified, :media_mentions], coder: JSON
+
   def internet_famous?
-    badge == "internet_famous"
+    return false unless follower_count && engagement_rate && last_post_date
+
+    # Criteria for Internet famous
+    follower_count >= 100_000 &&
+    engagement_rate >= 3.0 &&
+    last_post_date >= 6.months.ago &&
+    (verified || media_mentions.to_i >= 2)
   end
 
   def famous?
-    badge == "famous"
+    return false unless internet_famous?
+
+    # Additional criteria for Famous
+    follower_count >= 1_000_000 &&
+    media_mentions.to_i >= 5 &&
+    verified
   end
 
   def admin?

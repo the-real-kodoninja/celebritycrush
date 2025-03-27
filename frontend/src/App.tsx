@@ -19,6 +19,7 @@ import UserFeed from './components/user_feed/UserFeed';
 import Notifications from './components/notifications/Notifications';
 import Marketplace from './components/marketplace/Marketplace';
 import ModerationDashboard from './components/admin/ModerationDashboard';
+import Messaging from './components/messaging/Messaging'; // Added import
 
 const GlobalStyles = styled.div`
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
@@ -147,16 +148,16 @@ const App: React.FC = () => {
   return (
     <Router>
       <GlobalStyles>
-        <Header
-          theme={theme}
-          toggleTheme={toggleTheme}
-          isLoggedIn={isLoggedIn}
-          onLoginClick={handleLoginClick}
-          onToggleSidebar={toggleSidebar}
-          celebrities={celebrities}
-        />
-        <LeftSidebar theme={theme} isOpen={sidebarOpen} />
-        <MainContent theme={theme} sidebarOpen={sidebarOpen}>
+      <Header
+        theme={theme}
+        toggleTheme={toggleTheme}
+        isLoggedIn={isLoggedIn}
+        onLoginClick={handleLoginClick}
+        onToggleSidebar={toggleSidebar}
+        celebrities={celebrities}
+      />
+      <LeftSidebar theme={theme} isOpen={sidebarOpen} toggleTheme={toggleTheme} /> {/* Updated */}
+      <MainContent theme={theme} sidebarOpen={sidebarOpen}>
           {loading && page === 1 ? (
             <p>Loading...</p>
           ) : (
@@ -183,14 +184,15 @@ const App: React.FC = () => {
                   </>
                 }
               />
-	      <Route path="/signup" element={<Signup theme={theme} />} />
+              <Route path="/signup" element={<Signup theme={theme} />} />
               <Route path="/terms" element={<TermsAndConditions theme={theme} />} />
-	      <Route path="/notifications" element={<Notifications theme={theme} />} />
+              <Route path="/notifications" element={<Notifications theme={theme} />} />
               <Route path="/lists" element={<Lists theme={theme} lists={mockLists} />} />
               <Route path="/groups" element={<Groups theme={theme} groups={mockGroups} />} />
               <Route path="/fandom" element={<Fandom theme={theme} posts={mockPosts} />} />
               <Route path="/profile" element={<UserPage theme={theme} username="kodoninja" bio="Crushing it!" />} />
               <Route path="/messages" element={<Messages theme={theme} />} />
+              <Route path="/messaging" element={<Messaging theme={theme} />} /> {/* Added new route */}
               <Route path="/search" element={<SearchWrapper />} />
               <Route path="/admin/moderation" element={<ModerationDashboard theme={theme} />} />
               <Route path="/marketplace" element={<Marketplace theme={theme} />} />

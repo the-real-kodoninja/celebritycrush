@@ -6,6 +6,7 @@ export interface Theme {
   border: string;
   secondaryText: string;
   gradient: string;
+  primary: string; // Add primary color
 }
 
 export const darkTheme: Theme = {
@@ -16,6 +17,7 @@ export const darkTheme: Theme = {
   border: '#333333',
   secondaryText: '#b0b0b0',
   gradient: 'linear-gradient(45deg, #1a73e8, #00ddeb)',
+  primary: '#1a73e8', // Add primary color
 };
 
 export const lightTheme: Theme = {
@@ -26,4 +28,5 @@ export const lightTheme: Theme = {
   border: '#e0e0e0',
   secondaryText: '#606770',
   gradient: 'linear-gradient(45deg, #1a73e8, #00ddeb)',
+  primary: '#1a73e8', // Add primary color
 };
